@@ -1,4 +1,4 @@
-#  Personal AI Job-Search Agent
+#  Personal Job-Search Agent
 
 An automated, zero-cost personal job-search agent that monitors **Greenhouse** (`greenhouse.io`), **Workday** (`myworkdayjobs.com`), and **Lever** (`jobs.lever.co`) career portals for newly posted fresher / 0–3 years roles (posted within the last 14 days) across all your chosen locations, sorted strictly in order of recency (`Posted Today` $\rightarrow$ `Yesterday` $\rightarrow$ `...` $\rightarrow$ `14 days ago`), and delivers a daily consolidated Gmail report.
 
