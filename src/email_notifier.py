@@ -1,5 +1,6 @@
 from datetime import datetime
 import os
+import re
 import smtplib
 import time
 from email.mime.multipart import MIMEMultipart
@@ -158,7 +159,9 @@ def send_consolidated_digest(summary: ScanSummary) -> Dict[str, Any]:
     html_body = format_html_digest(summary)
 
     smtp_email = (get_setting("SMTP_EMAIL", "") or os.environ.get("SMTP_EMAIL", "")).strip()
-    smtp_password = (get_setting("SMTP_APP_PASSWORD", "") or os.environ.get("SMTP_APP_PASSWORD", "")).strip()
+    raw_password = (get_setting("SMTP_APP_PASSWORD", "") or os.environ.get("SMTP_APP_PASSWORD", "")).strip()
+    # Strip all spaces (including non-breaking spaces \xa0 copied from Google's App Password popup)
+    smtp_password = re.sub(r"\s+", "", raw_password)
     smtp_host = (get_setting("SMTP_HOST", "smtp.gmail.com") or "smtp.gmail.com").strip()
     smtp_port = int(get_setting("SMTP_PORT", "587") or 587)
 
@@ -179,6 +182,7 @@ def send_consolidated_digest(summary: ScanSummary) -> Dict[str, Any]:
                     server.login(smtp_email, smtp_password)
                     server.sendmail(smtp_email, [summary.recipient_email], msg.as_string())
 
+                print(f"\n[Email] ✓ Report successfully delivered to {summary.recipient_email} via Gmail SMTP.")
                 return log_email(
                     subscription_id=None,
                     recipient_email=summary.recipient_email,
@@ -193,6 +197,7 @@ def send_consolidated_digest(summary: ScanSummary) -> Dict[str, Any]:
                 if attempt < 2:
                     time.sleep(5)
 
+        print(f"\n[Email] ✗ Gmail SMTP delivery failed for {summary.recipient_email}: {last_err}")
         return log_email(
             subscription_id=None,
             recipient_email=summary.recipient_email,
@@ -203,6 +208,8 @@ def send_consolidated_digest(summary: ScanSummary) -> Dict[str, Any]:
             delivery_mode="gmail_smtp",
             error_msg=last_err,
         )
+
+    print(f"\n[Email] ✗ Skipped email delivery: SMTP_EMAIL or SMTP_APP_PASSWORD is missing.")
 
     return log_email(
         subscription_id=None,

@@ -42,11 +42,15 @@ class GreenhouseCollector(BaseCollector):
                     title = j.get("title", "").strip()
                     loc_name = (j.get("location") or {}).get("name", "") or ""
                     offices = j.get("offices") or []
-                    office_locs = [
-                        f"{o.get('name', '')} {o.get('location', '')}".strip()
-                        for o in offices
-                        if isinstance(o, dict) and (o.get("name") or o.get("location"))
-                    ]
+                    office_locs = []
+                    for o in offices:
+                        if not isinstance(o, dict):
+                            continue
+                        o_name = (o.get("name") or "").strip()
+                        o_loc = (o.get("location") or "").strip()
+                        combined_o = f"{o_name} {o_loc}".strip() if o_loc and o_loc.lower() not in o_name.lower() else (o_name or o_loc)
+                        if combined_o:
+                            office_locs.append(combined_o)
                     if office_locs:
                         extra_locs = ", ".join(ol for ol in office_locs if ol.lower() not in loc_name.lower())
                         if extra_locs:

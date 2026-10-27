@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import yaml
 from typing import List
@@ -255,7 +256,8 @@ def run_terminal_signup_wizard() -> None:
         app_pass = input("3. Enter Gmail 16-Character App Password: ").strip()
 
     if app_pass:
-        set_settings({"SMTP_EMAIL": email, "SMTP_APP_PASSWORD": app_pass})
+        clean_app_pass = re.sub(r"\s+", "", app_pass)
+        set_settings({"SMTP_EMAIL": email, "SMTP_APP_PASSWORD": clean_app_pass})
     elif not existing_smtp_email:
         set_settings({"SMTP_EMAIL": email})
 
