@@ -1,0 +1,245 @@
+user:
+  name: Aryush Tripathi
+  email: 22mm02002@iitbbs.ac.in
+  background: B.Tech Metallurgical & Materials Engineering, IIT Bhubaneswar
+
+schedule:
+  timezone: Asia/Kolkata
+  daily_times:
+    - "11:00"
+
+search_preferences:
+  active_roles:
+    - Software Engineer
+  locations:
+    - Remote
+    - Bengaluru
+    - Hyderabad
+    - Gurugram
+    - Mumbai
+    - Pune
+  enabled_sources:
+    - greenhouse
+    - workday
+    - lever
+
+candidate_profile:
+  core_skills:
+    - Python
+    - PyTorch
+    - Machine Learning
+    - Deep Learning
+    - Computer Vision
+    - RAG
+    - LangChain
+    - LLM
+    - Generative AI
+    - AI Agents
+    - SQL
+    - Data Analysis
+    - Product Metrics
+    - Experimentation
+    - FastAPI
+    - Materials Science
+  exclude_title_keywords:
+    - Senior
+    - Staff
+    - Principal
+    - Director
+    - VP
+    - Vice President
+    - Head of
+    - Distinguished
+
+company_boards:
+  greenhouse:
+    - slug: stripe
+      name: Stripe
+    - slug: databricks
+      name: Databricks
+    - slug: rubrik
+      name: Rubrik
+    - slug: okta
+      name: Okta
+    - slug: mongodb
+      name: MongoDB
+    - slug: coupang
+      name: Coupang
+    - slug: toast
+      name: Toast
+    - slug: twilio
+      name: Twilio
+    - slug: gitlab
+      name: GitLab
+    - slug: cloudflare
+      name: Cloudflare
+    - slug: coinbase
+      name: Coinbase
+    - slug: postman
+      name: Postman
+    - slug: robinhood
+      name: Robinhood
+    - slug: affirm
+      name: Affirm
+    - slug: agoda
+      name: Agoda
+    - slug: Canonical
+      name: Canonical
+    - slug: grafana
+      name: Grafana Labs
+    - slug: brave
+      name: Brave
+    - slug: zscaler
+      name: Zscaler
+    - slug: elastic
+      name: Elastic
+    - slug: confluent
+      name: Confluent
+    - slug: cockroachlabs
+      name: Cockroach Labs
+    - slug: scaleai
+      name: Scale AI
+    - slug: figma
+      name: Figma
+    - slug: datadog
+      name: Datadog
+    - slug: lyft
+      name: Lyft
+    - slug: pinterest
+      name: Pinterest
+    - slug: dropbox
+      name: Dropbox
+    - slug: asana
+      name: Asana
+    - slug: reddit
+      name: Reddit
+    - slug: duolingo
+      name: Duolingo
+    - slug: coursera
+      name: Coursera
+    - slug: udemy
+      name: Udemy
+    - slug: sentinelone
+      name: SentinelOne
+    - slug: netskope
+      name: Netskope
+    - slug: singlestore
+      name: SingleStore
+    - slug: clickhouse
+      name: ClickHouse
+    - slug: temporaltechnologies
+      name: Temporal
+  lever:
+    - slug: meesho
+      name: Meesho
+    - slug: zeta
+      name: Zeta
+    - slug: cred
+      name: CRED
+    - slug: actian
+      name: Actian
+    - slug: veeva
+      name: Veeva Systems
+    - slug: browserstack
+      name: BrowserStack
+    - slug: palantir
+      name: Palantir
+    - slug: zoox
+      name: Zoox
+  workday:
+    - tenant: nvidia
+      wd_instance: wd5
+      site_id: NVIDIAExternalCareerSite
+      name: NVIDIA
+    - tenant: salesforce
+      wd_instance: wd12
+      site_id: External_Career_Site
+      name: Salesforce
+    - tenant: adobe
+      wd_instance: wd5
+      site_id: external_experienced
+      name: Adobe
+    - tenant: mastercard
+      wd_instance: wd1
+      site_id: CorporateCareers
+      name: Mastercard
+    - tenant: cisco
+      wd_instance: wd5
+      site_id: Cisco_Careers
+      name: Cisco
+    - tenant: paypal
+      wd_instance: wd1
+      site_id: jobs
+      name: PayPal
+    - tenant: workday
+      wd_instance: wd5
+      site_id: Workday
+      name: Workday
+    - tenant: intel
+      wd_instance: wd1
+      site_id: External
+      name: Intel
+    - tenant: astrazeneca
+      wd_instance: wd3
+      site_id: Careers
+      name: AstraZeneca
+    - tenant: boeing
+      wd_instance: wd1
+      site_id: EXTERNAL_CAREERS
+      name: Boeing
+    - tenant: motorolasolutions
+      wd_instance: wd5
+      site_id: Careers
+      name: Motorola Solutions
+    - tenant: citi
+      wd_instance: wd5
+      site_id: "2"
+      name: Citi
+    - tenant: blackrock
+      wd_instance: wd1
+      site_id: BlackRock_Professional
+      name: BlackRock
+    - tenant: 3m
+      wd_instance: wd1
+      site_id: Search
+      name: 3M
+    - tenant: abb
+      wd_instance: wd3
+      site_id: External_Career_Page
+      name: ABB
+    - tenant: philips
+      wd_instance: wd3
+      site_id: jobs-and-careers
+      name: Philips
+    - tenant: roche
+      wd_instance: wd3
+      site_id: roche-ext
+      name: Roche
+    - tenant: autodesk
+      wd_instance: wd1
+      site_id: Ext
+      name: Autodesk
+    - tenant: marvell
+      wd_instance: wd1
+      site_id: MarvellCareers
+      name: Marvell Technology
+    - tenant: globalfoundries
+      wd_instance: wd1
+      site_id: External
+      name: GlobalFoundries
+    - tenant: broadcom
+      wd_instance: wd1
+      site_id: External_Career
+      name: Broadcom
+    - tenant: cadence
+      wd_instance: wd1
+      site_id: External_Careers
+      name: Cadence Design Systems
+    - tenant: equifax
+      wd_instance: wd5
+      site_id: External
+      name: Equifax
+    - tenant: transunion
+      wd_instance: wd5
+      site_id: TransUnion
+      name: TransUnion

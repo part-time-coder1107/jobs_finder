@@ -1,0 +1,41 @@
+name: Daily 12PM Noon IST Job Digest
+
+on:
+  schedule:
+    # 12:00 PM Noon IST once a day (06:30 UTC)
+    - cron: "30 6 * * *"
+  workflow_dispatch: # Allows manual 1-click dry run from GitHub UI
+
+permissions:
+  contents: write
+
+jobs:
+  send-job-digest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install requests beautifulsoup4 pyyaml python-dotenv
+
+      - name: Run 14-Day Workday, Greenhouse & Lever Job Scan
+        env:
+          SMTP_EMAIL: ${{ secrets.SMTP_EMAIL }}
+          SMTP_APP_PASSWORD: ${{ secrets.SMTP_APP_PASSWORD }}
+        run: |
+          python -m src.main --run-once
+
+      - name: Save updated Per-User Sent Jobs Database (Prevent Duplicates)
+        run: |
+          git config user.name "Personal Job Agent"
+          git config user.email "actions@github.com"
+          git add data/user_dbs/ jobs_watcher.db || true
+          git diff --staged --quiet || git commit -m "chore: update sent_jobs database after 12h digest"
+          git push

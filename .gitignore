@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.env
+jobs_watcher.db
+data/user_dbs/*.db
+data/scan.lock
+openclaw_agent/job_profile.md
