@@ -12,7 +12,7 @@ from src.main import (
     run_job_search_pipeline,
 )
 from src.email_notifier import format_plain_text_digest
-from install_12pm_autostart import setup_windows_startup_and_tasks
+from install_11am_autostart import setup_windows_startup_and_tasks
 
 OPENCLAW_PROFILE_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
