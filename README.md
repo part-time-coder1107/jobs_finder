@@ -1,10 +1,10 @@
-# ⚡ Personal AI Job-Search Agent (Terminal Edition)
+#  Personal AI Job-Search Agent (Terminal Edition)
 
 An automated, zero-cost personal job-search agent that monitors **Greenhouse** (`greenhouse.io`), **Workday** (`myworkdayjobs.com`), and **Lever** (`jobs.lever.co`) career portals for newly posted fresher / 0–3 years roles (posted within the last 14 days) across all your chosen locations, sorted strictly in order of recency (`Posted Today` $\rightarrow$ `Yesterday` $\rightarrow$ `...` $\rightarrow$ `14 days ago`), and delivers a daily consolidated Gmail report.
 
 ---
 
-## 🚀 Quick Start (Clone & Setup on Any Laptop)
+##  Quick Start (Clone & Setup on Any Laptop)
 
 ### 1. Clone the Repository
 Open your terminal (PowerShell or Command Prompt) and run:
@@ -45,7 +45,7 @@ to immediately run your first scan and receive your email report!
 
 ---
 
-## ⏰ Automatic 11:00 AM Daily Check + Closed-Laptop Wake-Up
+##  Automatic 11:00 AM Daily Check + Closed-Laptop Wake-Up
 
 When you finish `python setup_agent.py`, the agent automatically configures:
 - **11:00 AM Daily Timer**: Scheduled via Windows Task Scheduler (`JobAgent_Daily`) and the background Windows Startup watcher (`JobAgent_12PM_Watcher.vbs`).
@@ -55,7 +55,7 @@ When you finish `python setup_agent.py`, the agent automatically configures:
 
 ---
 
-## 🛠️ Useful Terminal Commands
+## Useful Terminal Commands
 
 - **Re-run the interactive setup / change preferences anytime**:
   ```bash
@@ -72,7 +72,7 @@ When you finish `python setup_agent.py`, the agent automatically configures:
 
 ---
 
-## ✨ Key Features
+## Key Features
 
 - **100% Free Public ATS Feeds**: Queries Greenhouse, Workday, and Lever directly — no paid API keys, no LLM tokens, and no credit limits.
 - **Last 14 Days Only & Sorted by Recency**: Filters strictly for jobs posted within the last 14 days and sorts them from `Posted Today` down to `14 days ago`.
