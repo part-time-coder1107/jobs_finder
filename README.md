@@ -1,77 +1,61 @@
-#  Personal Job-Search Agent
+# Personal Job-Search Agent (Terminal Edition)
 
-An automated, zero-cost personal job-search agent that monitors **Greenhouse** (`greenhouse.io`), **Workday** (`myworkdayjobs.com`), and **Lever** (`jobs.lever.co`) career portals for newly posted fresher / 0–3 years roles (posted within the last 14 days) across all your chosen locations, sorted strictly in order of recency (`Posted Today` $\rightarrow$ `Yesterday` $\rightarrow$ `...` $\rightarrow$ `14 days ago`), and delivers a daily consolidated Gmail report.
+An automated, zero-cost personal job-search agent that scans **Greenhouse** (`greenhouse.io`), **Workday** (`myworkdayjobs.com`), and **Lever** (`jobs.lever.co`) career portals for newly posted roles (last 14 days), reads the **Qualifications Required** section of every job detail to place **0–2 years experience** roles on top (sorted by recency from `Posted Today` downwards), and sends a daily Gmail report at **11:00 AM**.
 
 ---
 
-##  Quick Start (Clone & Setup on Any Laptop)
+## Step 1: Turn On 2-Step Verification & Create Your 16-Character Gmail App Password
 
-### 1. Clone the Repository
-Open your terminal (PowerShell or Command Prompt) and run:
+To allow the agent to email your daily job report to your Gmail inbox, Google requires a **16-Character App Password** (not your normal Gmail password).
+
+### A. If Your Google 2-Step Verification (2FA) is Currently OFF:
+1. Open **[https://myaccount.google.com/security](https://myaccount.google.com/security)** and sign in to your Google account.
+2. Under **"How you sign in to Google"**, click **2-Step Verification**.
+3. Click **Get started** (or **Turn on 2-Step Verification**) and follow the prompts to verify your phone number via SMS or Google Prompt.
+4. Click **Turn On**.
+
+### B. Generate Your 16-Character App Password:
+1. Once 2-Step Verification is ON, open **[https://myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)**.
+2. In the **App name** box, type `Job Agent` and click **Create**.
+3. A yellow box will pop up showing a **16-letter code** (4 groups of 4 letters, e.g., `abcd efgh ijkl mnop`).
+4. **Copy that 16-letter code** (keep it ready for Step 3 below).
+
+---
+
+## Step 2: Clone & Install on Your Laptop
+
+Make sure **Python 3.10+** and **Git** are installed on your Windows laptop, then open **PowerShell** or **Command Prompt** and run these 4 commands:
+
 ```bash
+cd ~
 git clone https://github.com/part-time-coder1107/jobs_finder.git
 cd jobs_finder
-```
-
-### 2. Install Dependencies
-Make sure you have **Python 3.10+** installed, then install the required packages:
-```bash
 pip install -r requirements.txt
-```
-
-### 3. Run the Interactive Terminal Setup Wizard
-```bash
 python setup_agent.py
 ```
-*(or `python -m src.main --setup`)*
-
-Inside the terminal wizard, you will configure:
-1. **Full Name**: Your name for the daily email greeting.
-2. **Recipient Gmail Address**: The email address where your daily job report will be sent.
-3. **Gmail 16-Character App Password**:
-   - Create a 16-character Google App Password at **[https://myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)** (requires 2-Step Verification enabled on your Google Account) and paste it here.
-4. **Target Job Role (Single Role)**:
-   - Use the `↑` / `↓` arrow keys and press `ENTER` to tick `[✓]` one role (e.g., `Software Engineer`, `Machine Learning Engineer`, `AI Engineer`, `Data Analyst`, `Product Analyst`, `Data Scientist`, `Backend Engineer`, `Frontend Engineer`, or choose `Type a Custom Job Role...` to enter any role).
-5. **Target Locations (Multi-Select)**:
-   - Use `↑` / `↓` arrow keys and press `SPACEBAR` to tick `[✓]` multiple locations (including `Remote`, `Bengaluru`, `Hyderabad`, `Pune`, `Gurugram`, `Mumbai`, `Chennai`, `Delhi NCR`), then press `ENTER`.
-6. **Job Portals to Search (Multi-Select)**:
-   - Use `SPACEBAR` to tick `[✓]` `Greenhouse`, `Workday`, and `Lever`, then press `ENTER`.
-
-At the end of the setup, type `y` when asked:
-```text
-Would you like to run a live scan & send a test email right now? (y/n) [n]: y
-```
-to immediately run your first scan and receive your email report!
 
 ---
 
-##  Automatic 11:00 AM Daily Check + Closed-Laptop Wake-Up
+## Step 3: Fill Your Details in the Terminal Setup (`python setup_agent.py`)
 
-When you finish `python setup_agent.py`, the agent automatically configures:
-- **11:00 AM Daily Timer**: Scheduled via Windows Task Scheduler (`JobAgent_Daily`) and the background Windows Startup watcher (`JobAgent_12PM_Watcher.vbs`).
-- **Wake-Up & Post-11:00 AM Catch-Up**:
-  - If your laptop is open at **11:00 AM**, the scan runs at 11:00 AM and emails your report.
-  - If your laptop was **closed (asleep) or turned off** at 11:00 AM, as soon as you open or turn on your laptop later that day and Wi-Fi connects, the agent automatically detects that today's 11:00 AM check was missed, runs the scan once, and emails all new jobs posted since your last check.
+When `python setup_agent.py` starts, complete the prompts inside the terminal:
 
----
-
-## Useful Terminal Commands
-
-- **Re-run the interactive setup / change preferences anytime**:
-  ```bash
-  python setup_agent.py
-  ```
-- **Run an immediate scan & send email right now**:
-  ```bash
-  python -m src.main --run-once
-  ```
-- **Run a scan for a specific role or locations from CLI**:
-  ```bash
-  python -m src.main --run-once --role "Data Analyst" --locations "Remote, Bengaluru, Hyderabad, Pune"
-  ```
+1. **Enter Full Name**: Type your name and press `ENTER`.
+2. **Enter Recipient Gmail Address**: Type your Gmail address (e.g., `yourname@gmail.com`) and press `ENTER`.
+3. **Enter Gmail 16-Character App Password**: Paste the **16-character App Password** you copied from Google in Step 1B and press `ENTER`.
+4. **Select Target Job Role**:
+   - Use the `↑` / `↓` arrow keys to move the `[✓]` tick-box to your preferred role (or select `Type a Custom Job Role...` to type any role) and press `ENTER`.
+5. **Select Target Locations**:
+   - Use `↑` / `↓` arrow keys and press **`SPACEBAR`** to tick `[✓]` all the locations you want (e.g., `Remote`, `Bengaluru`, `Hyderabad`, `Pune`, `Gurugram`, `Mumbai`, `Chennai`, `Delhi NCR`), then press `ENTER`.
+6. **Select Job Portals to Search**:
+   - Use **`SPACEBAR`** to tick `[✓]` `Greenhouse`, `Workday`, and `Lever`, then press `ENTER`.
+7. **Live Demo Run**:
+   - When asked `Would you like to run a live scan & send a test email right now? (y/n) [n]:`, type **`y`** and press `ENTER` to immediately receive your first email report!
 
 ---
 
-## Key Features
-- **Last 14 Days Only & Sorted by Recency**: Filters strictly for jobs posted within the last 14 days and sorts them from `Posted Today` down to `14 days ago`.
-- **Zero Duplicate Emails**: Every emailed job is recorded in a dedicated per-user SQLite database (`data/user_dbs/<your_email>.db`) using 3-key deduplication (`job_id`, `canonical_url`, and `company|title`) so the same job is never emailed twice.
+## What Happens Automatically After Setup
+
+- **11:00 AM Daily Email**: Every day at **11:00 AM**, the agent scans all selected portals and emails you only **new** jobs posted since your last check.
+- **Closed / Switched-Off Laptop Wake-Up**: If your laptop is closed or turned off at 11:00 AM, as soon as you switch on or open your laptop later that day and Wi-Fi connects, the agent automatically wakes up, runs the missed scan once, and sends your email report.
+- **Update Preferences Anytime**: Run `python setup_agent.py` again whenever you want to change your role or locations.
