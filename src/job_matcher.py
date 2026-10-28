@@ -309,67 +309,139 @@ def _is_excluded_by_seniority(title: str, exclude_keywords: List[str], target_ro
     return False
 
 
-_YEARS = r"(?:years?|yrs?)"
-_MIN_YEARS_PATTERNS = [
-    rf"\b(\d{{1,2}})\s*(?:-|–|to)\s*\d{{1,2}}\s*\+?\s*{_YEARS}",         # "0-2 years", "1-3 years", "4-6 years" (lower bound)
-    rf"\b(\d{{1,2}})\s*\+\s*{_YEARS}",                                   # "1+ years", "2+ years", "4+ years"
-    rf"\b(?:minimum|min\.?|at least|atleast)\s*(?:of\s*)?(\d{{1,2}})\s*\+?\s*{_YEARS}",  # "minimum 2 years", "at least 1 year"
-    rf"\b(\d{{1,2}})\s*or more\s*{_YEARS}",                              # "2 or more years"
-    rf"\b(\d{{1,2}})\s*{_YEARS}\s+(?:of\s+)?(?:relevant\s+|professional\s+|industry\s+|work\s+|hands-on\s+)?experience\b",  # "2 years of experience"
+_YEARS = r"(?:years?|yrs?\.?)"
+
+# Matches ranges like "0-1 years", "0 - 2 years", "1 to 3 years", "4-6 years" anywhere in a sentence
+_RANGE_YEARS_RE = re.compile(
+    rf"\b(\d{{1,2}})\s*(?:-|–|—|to)\s*(\d{{1,2}})\s*\+?\s*{_YEARS}\b",
+    re.IGNORECASE,
+)
+
+# Matches single/minimum thresholds anywhere in a sentence (beginning, middle, or end):
+#   - "7+ years", "7 + years", "2+ yrs"
+#   - "Experience: 7+ years", "experience of 2 years", "experience: 1 year"
+#   - "minimum 2 years", "minimum of 3 years", "at least 1 year", "over 5 years", "more than 4 years"
+#   - "2 or more years"
+#   - "7+ years of strong software engineering experience", "2 years of hands-on experience"
+_SINGLE_YEARS_PATTERNS = [
+    re.compile(rf"\b(\d{{1,2}})\s*\+\s*{_YEARS}\b", re.IGNORECASE),
+    re.compile(rf"\b(?:minimum|min\.?|at\s+least|atleast|over|more\s+than)\s*(?:of\s*)?(\d{{1,2}})\s*\+?\s*{_YEARS}\b", re.IGNORECASE),
+    re.compile(rf"\b(\d{{1,2}})\s*or\s+more\s+{_YEARS}\b", re.IGNORECASE),
+    re.compile(rf"\bexperience\s*(?:of|in|:|-|–|—)?\s*(?:at\s+least\s+|minimum\s+)?(\d{{1,2}})\s*\+?\s*{_YEARS}\b", re.IGNORECASE),
+    re.compile(rf"\b(?:with|having|possess|require[sd]?|bring|need)\s+(\d{{1,2}})\s*\+?\s*{_YEARS}\b", re.IGNORECASE),
+    re.compile(rf"\b(\d{{1,2}})\s*\+?\s*{_YEARS}\s+(?:of\s+)?(?:[\w/,&-]+\s+){{0,6}}?(?:experience|exp|background|track\s+record|development|engineering)\b", re.IGNORECASE),
 ]
 
+_NO_EXPERIENCE_RE = re.compile(
+    r"\b(no\s+prior\s+(?:[\w-]+\s+){0,2}?experience|0\s*\+?\s*(?:years?|yrs?)|fresher|freshers|new\s+grad(?:uate)?s?|recent\s+grad(?:uate)?s?|university\s+grad(?:uate)?s?|entry[- ]level|campus\s+hire)\b",
+    re.IGNORECASE,
+)
+
 _QUALIFICATION_HEADER_RE = re.compile(
-    r"\b(minimum qualifications?|required qualifications?|basic qualifications?|qualifications?\s+required|qualifications?|requirements?|what you(?:'ll|\s+will)?\s+(?:need|bring)|who you are|eligibility|experience required)\b",
+    r"\b(qualifications?\s*/\s*education\s*/\s*experience|minimum\s+qualifications?|required\s+qualifications?|basic\s+qualifications?|preferred\s+qualifications?|qualifications?\s+and\s+experience|qualifications?\s+required|qualifications?|requirements?|what\s+you(?:'ll|\s+will)?\s+(?:need|bring)|who\s+you\s+are|eligibility|experience\s+required|education\s*(?:&|and|/)\s*experience)\b",
     re.IGNORECASE,
 )
 
 
 def _extract_qualification_section(description: str) -> str:
     """
-    Extracts the 'Qualifications Required' / 'Requirements' section from the full
-    job detail text so minimum years of experience can be read directly from the
-    qualifications section.
+    Extracts the 'Qualifications Required' / 'Minimum Qualifications' /
+    'Qualifications / Education / Experience' section from the full job detail text.
     """
     desc = description or ""
     matches = list(_QUALIFICATION_HEADER_RE.finditer(desc))
     if not matches:
         return desc
-    # Combine slices around each qualification/requirement heading (up to 3500 chars each)
-    slices = [desc[m.start() : m.start() + 3500] for m in matches]
+    slices = [desc[m.start() : m.start() + 4000] for m in matches]
     return " ".join(slices)
+
+
+def _extract_experience_values(text: str) -> List[int]:
+    """
+    Finds all minimum-year experience requirements written at the beginning,
+    middle, or end of sentences within `text`.
+    """
+    values: List[int] = []
+
+    if _NO_EXPERIENCE_RE.search(text):
+        values.append(0)
+
+    for m in _RANGE_YEARS_RE.finditer(text):
+        try:
+            low_yr = int(m.group(1))
+            high_yr = int(m.group(2))
+            if 0 <= low_yr <= high_yr <= 25:
+                values.append(low_yr)
+        except (ValueError, IndexError):
+            continue
+
+    for pat in _SINGLE_YEARS_PATTERNS:
+        for m in pat.finditer(text):
+            try:
+                yr = int(m.group(1))
+                # Ignore company-history numbers like "For 15+ years our company..."
+                start_ctx = max(0, m.start() - 35)
+                prefix = text[start_ctx : m.start()].lower()
+                if re.search(r"\b(for\s+over|for\s+the\s+past|for\s+more\s+than|founded|celebrating|since)\b", prefix):
+                    continue
+                if 0 <= yr <= 25:
+                    values.append(yr)
+            except (ValueError, IndexError):
+                continue
+
+    return values
 
 
 def _is_zero_to_two_years_qualification(title: str, description: str) -> bool:
     """
-    Reads the Qualification Required section of the job details (and title/full details)
-    to determine the minimum years of experience required.
-    Returns True if the minimum experience is in the range of 0-2 years (0, 1, or 2 years,
-    or explicit fresher / entry-level / new graduate role) so those jobs are placed ON TOP,
-    and False for all other jobs so they are placed BELOW them.
+    Reads the Qualification section of the job details (whether experience is written
+    at the beginning, middle, or end of a sentence) and checks the minimum years of
+    experience:
+      - Returns True if the role's minimum experience is in the 0-2 years range
+        (e.g. "0-1 years", "0-2 years", "1-2 years", "1+ years", "2+ years",
+        "no prior professional experience", "fresher", "new grad") AND the
+        qualifications do not demand a senior 3+ / 5+ / 7+ year primary requirement.
+      - Returns False for 3+ / 5+ / 7+ year roles or roles without a 0-2 year qualification,
+        placing them below the 0-2 years jobs.
     """
-    qual_section = _extract_qualification_section(description).lower()
-    full_text = f"{title} {description}".lower()
+    qual_section = _extract_qualification_section(description)
+    full_text = f"{title} {description}"
 
-    # Check the extracted Qualification section first, then full job details
-    for section_text in (qual_section, full_text):
-        found_min_years: List[int] = []
-        for pattern in _MIN_YEARS_PATTERNS:
-            for m in re.finditer(pattern, section_text):
-                try:
-                    yr = int(m.group(1))
-                    if 0 <= yr <= 25:
-                        found_min_years.append(yr)
-                except (ValueError, IndexError):
-                    continue
+    for section in (qual_section, full_text):
+        # If the section explicitly states a 0-2 year range (e.g. "with 0-1 years of hands-on experience")
+        # or "no prior professional experience", check that first:
+        has_explicit_0_to_2_range = False
+        for m in _RANGE_YEARS_RE.finditer(section):
+            try:
+                low_yr = int(m.group(1))
+                high_yr = int(m.group(2))
+                if 0 <= low_yr <= 2 and high_yr <= 4:
+                    has_explicit_0_to_2_range = True
+                    break
+            except (ValueError, IndexError):
+                continue
 
-        if found_min_years:
-            min_required = min(found_min_years)
-            return 0 <= min_required <= 2
+        if _NO_EXPERIENCE_RE.search(section):
+            has_explicit_0_to_2_range = True
 
-    # Also treat explicit fresher / new-grad / entry-level / I / Associate / Graduate roles as 0-2 years
+        exp_vals = _extract_experience_values(section)
+        if exp_vals:
+            # If the qualifications demand a high primary experience (e.g. "Experience: 7+ years...")
+            # and there is no explicit 0-2 year degree/fresher track, it is NOT a 0-2 year job.
+            first_val = exp_vals[0]
+            max_val = max(exp_vals)
+            min_val = min(exp_vals)
+
+            if has_explicit_0_to_2_range and first_val <= 3:
+                return True
+            if first_val > 2 or max_val >= 4:
+                return False
+            return 0 <= min_val <= 2
+
+    # Title-level fallback for entry-level / fresher titles when no numbers appear in description
     if re.search(
-        r"\b(fresher|new grad|recent graduate|university graduate|entry[- ]level|graduate engineer|associate|intern|0\s*years?)\b",
-        full_text,
+        r"\b(fresher|new\s+grad|recent\s+graduate|university\s+graduate|entry[- ]level|graduate\s+engineer|software\s+engineer\s+i\b|sde\s*[- ]?\s*(?:1|i)\b|analyst\s+i\b|associate\s+data|associate\s+software)\b",
+        title.lower(),
     ):
         return True
 
