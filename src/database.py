@@ -156,16 +156,27 @@ def has_run_today(recipient_email: str, scheduled_hm: str = "11:00") -> bool:
     return completed_hm >= scheduled_hm
 
 
-def record_daily_run(recipient_email: str, new_jobs_sent: int = 0) -> None:
+def record_daily_run(
+    recipient_email: str,
+    new_jobs_sent: int = 0,
+    force_skip_today: bool = False,
+) -> None:
     """
     Marks today's daily scan (YYYY-MM-DD) as completed in the user's dedicated database
     so the agent runs naturally once per day at or after the configured daily time.
+    If `force_skip_today=True` (e.g., user selected 'n' during signup to defer their first
+    scan until tomorrow at 11:00 AM, or already ran their initial scan today), records
+    `T23:59:59` for today so the next scheduled run occurs tomorrow at 11:00 AM.
     """
     user_db_path = init_user_db(recipient_email)
     conn = sqlite3.connect(user_db_path, check_same_thread=False)
     cur = conn.cursor()
     today_str = datetime.now().strftime("%Y-%m-%d")
-    now_iso = datetime.now().isoformat(timespec="seconds")
+    completed_ts = (
+        f"{today_str}T23:59:59"
+        if force_skip_today
+        else datetime.now().isoformat(timespec="seconds")
+    )
     cur.execute(
         """
         INSERT INTO daily_runs (run_date, recipient_email, completed_at, new_jobs_sent)
@@ -174,7 +185,7 @@ def record_daily_run(recipient_email: str, new_jobs_sent: int = 0) -> None:
             completed_at = excluded.completed_at,
             new_jobs_sent = excluded.new_jobs_sent
         """,
-        (today_str, recipient_email.strip().lower(), now_iso, new_jobs_sent),
+        (today_str, recipient_email.strip().lower(), completed_ts, new_jobs_sent),
     )
     conn.commit()
     conn.close()

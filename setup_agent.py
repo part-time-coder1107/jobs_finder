@@ -334,12 +334,6 @@ def run_terminal_signup_wizard() -> None:
         sites=selected_sites,
     )
 
-    # Install Windows Startup & Scheduled Task
-    try:
-        setup_windows_startup_and_tasks(schedule_time=sched_time)
-    except Exception:
-        pass
-
     print("\n" + "-" * 70)
     print("✓ Profile Saved Successfully!")
     print(f"  • Name:             {name}")
@@ -351,13 +345,29 @@ def run_terminal_signup_wizard() -> None:
     print(f"  • User Database:    {user_db_path}")
     print("-" * 70)
 
-    run_now = input("\nWould you like to run your initial 14-day job scan & send the email report right now? (Y/n) [Y]: ").strip().lower()
-    if run_now in ("", "y", "yes"):
+    run_now = input("\nWould you like to run a live scan & send a test email right now? (y/n) [n]: ").strip().lower()
+    if run_now in ("y", "yes"):
         print("\nRunning initial 14-day live scan across selected portals...")
         summary = run_job_search_pipeline(send_email=True)
         if summary.email_status == "sent_smtp" and summary.recipient_email:
-            record_daily_run(summary.recipient_email, new_jobs_sent=len(summary.unreported_jobs))
+            record_daily_run(
+                summary.recipient_email,
+                new_jobs_sent=len(summary.unreported_jobs),
+                force_skip_today=True,
+            )
         print("\n" + format_plain_text_digest(summary))
+    else:
+        # User selected 'n': keep sent_jobs empty and defer today's run so their FIRST email
+        # arrives tomorrow at 11:00 AM with ALL matching jobs from the last 14 days, and
+        # succeeding days at 11:00 AM only send newer opportunities.
+        record_daily_run(email, new_jobs_sent=0, force_skip_today=True)
+        print(f"\n✓ Scheduled! Your first email (with all matching jobs from the last 14 days) will arrive tomorrow at {sched_time} IST, followed by newer opportunities on succeeding days.")
+
+    # Install Windows Startup & Scheduled Task AFTER handling initial scan preference
+    try:
+        setup_windows_startup_and_tasks(schedule_time=sched_time)
+    except Exception:
+        pass
 
 
 if __name__ == "__main__":
