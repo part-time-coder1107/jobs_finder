@@ -111,7 +111,7 @@ def normalize_raw_jobs(raw_jobs: List[RawJob]) -> List[NormalizedJob]:
             platform=r.platform.strip().lower(),
             company=clean_company,
             title=clean_title,
-            location=(r.location or "India").strip(),
+            location=(r.location or "").strip(),
             job_url=r.job_url.strip(),
             description=(r.description or "").strip(),
             posted_at=posted,

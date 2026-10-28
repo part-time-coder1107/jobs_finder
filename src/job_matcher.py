@@ -220,7 +220,7 @@ NON_INDIA_REMOTE_MARKERS = [
     "australia",
     "singapore",
     "korea",
-    "taiwan",
+    "taiwan", "prc", "china", "shanghai", "shenzhen", "beijing", "hong kong",
 ]
 
 
@@ -281,15 +281,17 @@ def _matches_target_roles(title: str, description: str, target_roles: List[str])
 def _is_location_compatible(job_loc: str, allowed_loc_terms: List[str]) -> bool:
     if not allowed_loc_terms:
         return True
-    loc_low = job_loc.lower()
+    loc_low = (job_loc or "").strip().lower()
+    if not loc_low:
+        return False
 
     city_terms = [t for t in allowed_loc_terms if "remote" not in t and t != "anywhere" and t != "work from home"]
-    if any(ct in loc_low for ct in city_terms):
+    if any(re.search(rf"\b{re.escape(ct)}\b", loc_low) for ct in city_terms):
         return True
 
     wants_remote = any("remote" in t for t in allowed_loc_terms)
     if wants_remote and ("remote" in loc_low or "work from home" in loc_low):
-        if any(foreign in loc_low for foreign in NON_INDIA_REMOTE_MARKERS) and "india" not in loc_low:
+        if any(re.search(rf"\b{re.escape(foreign)}\b", loc_low) for foreign in NON_INDIA_REMOTE_MARKERS) and not re.search(r"\bindia\b", loc_low):
             return False
         return True
 

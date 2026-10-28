@@ -79,7 +79,7 @@ class WorkdayCollector(BaseCollector):
                         postings = resp.json().get("jobPostings", [])
                         for p in postings:
                             title = (p.get("title") or "").strip()
-                            loc_text = (p.get("locationsText") or loc_q).strip()
+                            loc_text = (p.get("locationsText") or "").strip()
                             ext_path = (p.get("externalPath") or "").strip()
                             posted_on = (p.get("postedOn") or "Unknown").strip()
                             bullets = " ".join(p.get("bulletFields") or [])
@@ -91,17 +91,14 @@ class WorkdayCollector(BaseCollector):
                             seen_paths.add(ext_path)
 
                             # Workday's externalPath embeds the primary location slug, e.g. /job/India-Bengaluru/...
+                            # Never append or invent any location from the search query (`loc_q`).
                             path_parts = [seg for seg in ext_path.split("/") if seg]
                             path_loc = path_parts[1].replace("---", ", ").replace("-", " ") if len(path_parts) >= 2 else ""
 
-                            if re.match(r"^\d+\s+locations?$", loc_text.lower()) or loc_text.lower() == "india":
-                                base_loc = f"{path_loc} ({loc_text})".strip() if path_loc else loc_text
-                                if loc_q.lower() != "india" and loc_q.lower() not in base_loc.lower():
-                                    resolved_loc = f"{base_loc}, {loc_q}"
-                                else:
-                                    resolved_loc = base_loc
+                            if re.match(r"^\d+\s+locations?$", loc_text.lower()):
+                                resolved_loc = f"{path_loc} ({loc_text})".strip() if path_loc else loc_text
                             else:
-                                resolved_loc = loc_text
+                                resolved_loc = loc_text or path_loc
 
                             full_url = f"https://{tenant}.{wd}.myworkdayjobs.com/en-US/{site_id}{ext_path}"
                             board_jobs.append(
@@ -145,6 +142,18 @@ class WorkdayCollector(BaseCollector):
                 r = requests.get(detail_api_url, headers=headers, timeout=6)
                 if r.status_code == 200:
                     info = r.json().get("jobPostingInfo") or {}
+                    # Read the exact real locations directly from the Workday job detail page
+                    primary_loc = (info.get("location") or "").strip()
+                    add_locs = [str(x).strip() for x in (info.get("additionalLocations") or []) if str(x).strip()]
+                    exact_locs: List[str] = []
+                    if primary_loc:
+                        exact_locs.append(primary_loc)
+                    for al in add_locs:
+                        if al.lower() not in [e.lower() for e in exact_locs]:
+                            exact_locs.append(al)
+                    if exact_locs:
+                        job.location = ", ".join(exact_locs)
+
                     raw_desc = info.get("jobDescription") or ""
                     if raw_desc:
                         unescaped = html.unescape(raw_desc)
