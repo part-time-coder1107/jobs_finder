@@ -238,11 +238,11 @@ def run_terminal_signup_wizard() -> None:
 
     # 1. Full Name
     default_name = user_cfg.get("name") or "Aryush Tripathi"
-    name = input(f"1. Enter Full Name [{default_name}]: ").strip() or default_name
+    name = input("1. Enter Full Name [like Aryush Tripathi]: ").strip() or default_name
 
     # 2. Recipient Gmail Address
     default_email = user_cfg.get("email") or "22mm02002@iitbbs.ac.in"
-    email = input(f"2. Enter Recipient Gmail Address [{default_email}]: ").strip() or default_email
+    email = input("2. Enter Recipient Gmail Address [like 22mm02002@iitbbs.ac.in]: ").strip() or default_email
 
     # 3. Gmail 16-Character App Password (or reuse existing sender key)
     existing_smtp_email = get_setting("SMTP_EMAIL", "")
