@@ -22,9 +22,21 @@ To allow the agent to email your daily job report to your Gmail inbox, Google re
 
 ---
 
-## Step 2: Clone & Install on Your Laptop
+## Step 2: Install Git (if not installed) & Clone the Repository
 
-Make sure **Python 3.10+** and **Git** are installed on your Windows laptop, then open **PowerShell** or **Command Prompt** and run these 4 commands:
+### A. If Git is NOT Installed on Your Laptop:
+1. Open **PowerShell** or **Command Prompt** and run this command to install Git on Windows:
+   ```bash
+   winget install --id Git.Git -e --source winget
+   ```
+   *(Or download & install Git manually from [https://git-scm.com/download/win](https://git-scm.com/download/win))*
+2. Once Git finishes installing, **close and reopen PowerShell / Command Prompt**, then verify Git is installed by running:
+   ```bash
+   git --version
+   ```
+
+### B. Clone the Repository & Run Setup:
+Make sure **Python 3.10+** and **Git** are installed on your Windows laptop, then open **PowerShell** or **Command Prompt** and run these commands one by one:
 
 ```bash
 cd ~
