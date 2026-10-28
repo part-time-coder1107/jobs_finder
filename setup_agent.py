@@ -4,7 +4,7 @@ import sys
 import yaml
 from typing import List
 from database import init_db, set_settings, get_setting
-from src.database import save_user_profile_to_user_db, get_user_db_path
+from src.database import save_user_profile_to_user_db, get_user_db_path, record_daily_run
 from src.main import (
     CONFIG_PATH,
     load_preferences_config,
@@ -314,13 +314,14 @@ def run_terminal_signup_wizard() -> None:
     with open(CONFIG_PATH, "w", encoding="utf-8") as f:
         yaml.safe_dump(cfg, f, sort_keys=False, allow_unicode=True)
 
-    # Save to dedicated per-user SQLite database
+    # Save to dedicated per-user SQLite database (reset sent history on signup so first scan returns all last-14-days jobs)
     user_db_path = save_user_profile_to_user_db(
         email=email,
         name=name,
         role=selected_role,
         locations=selected_locations,
         sites=selected_sites,
+        reset_sent_history=True,
     )
 
     # Sync openclaw_agent/job_profile.md
@@ -350,10 +351,12 @@ def run_terminal_signup_wizard() -> None:
     print(f"  • User Database:    {user_db_path}")
     print("-" * 70)
 
-    run_now = input("\nWould you like to run a live scan & send a test email right now? (y/n) [n]: ").strip().lower()
-    if run_now in ("y", "yes"):
-        print("\nRunning live scan across selected portals...")
+    run_now = input("\nWould you like to run your initial 14-day job scan & send the email report right now? (Y/n) [Y]: ").strip().lower()
+    if run_now in ("", "y", "yes"):
+        print("\nRunning initial 14-day live scan across selected portals...")
         summary = run_job_search_pipeline(send_email=True)
+        if summary.email_status == "sent_smtp" and summary.recipient_email:
+            record_daily_run(summary.recipient_email, new_jobs_sent=len(summary.unreported_jobs))
         print("\n" + format_plain_text_digest(summary))
 
 

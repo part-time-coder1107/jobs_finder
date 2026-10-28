@@ -265,14 +265,14 @@ def _matches_target_roles(title: str, description: str, target_roles: List[str])
         r_low = role.strip().lower()
         if not r_low:
             continue
-        if r_low in jt:
+        if re.search(rf"\b{re.escape(r_low)}\b", jt):
             return True
         for key, syns in ROLE_SYNONYM_GROUPS.items():
-            if key in r_low or r_low in key:
-                if any(s in jt for s in syns):
+            if re.search(rf"\b{re.escape(key)}\b", r_low) or re.search(rf"\b{re.escape(r_low)}\b", key):
+                if any(re.search(rf"\b{re.escape(s)}\b", jt) for s in syns):
                     return True
         tokens = [w for w in r_low.split() if len(w) > 2]
-        if tokens and all(t in jt for t in tokens):
+        if tokens and all(re.search(rf"\b{re.escape(t)}\b", jt) for t in tokens):
             return True
 
     return False

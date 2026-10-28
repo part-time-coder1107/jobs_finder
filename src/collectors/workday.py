@@ -1,4 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime
 import html
 import re
 from typing import List, Dict, Any
@@ -130,6 +131,12 @@ class WorkdayCollector(BaseCollector):
         def _enrich_workday_job_detail(job: RawJob) -> None:
             std_date = standardize_posted_date(job.posted_at)
             if std_date == "Unknown" or "30+" in (job.posted_at or ""):
+                return
+            try:
+                days_old = (datetime.now().date() - datetime.strptime(std_date[:10], "%Y-%m-%d").date()).days
+                if days_old < 0 or days_old > 14:
+                    return
+            except Exception:
                 return
             try:
                 # Convert public URL https://{tenant}.{wd}.myworkdayjobs.com/en-US/{site_id}/job/...

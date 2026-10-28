@@ -186,13 +186,34 @@ def save_user_profile_to_user_db(
     role: str,
     locations: List[str],
     sites: List[str],
+    reset_sent_history: bool = False,
 ) -> str:
     """
     Saves the user's preferences into their dedicated per-user SQLite database.
+    When a user signs up for the first time (or re-runs signup / changes their
+    target role or locations), resets their sent_jobs history so their initial
+    scan returns all matching opportunities from the last 14 days, while all
+    subsequent visits/scans only return newer opportunities.
     """
-    user_db_path = init_user_db(email)
+    clean_email = email.strip().lower()
+    user_db_path = init_user_db(clean_email)
     conn = sqlite3.connect(user_db_path, check_same_thread=False)
     cur = conn.cursor()
+
+    cur.execute("SELECT role, locations FROM user_profile WHERE email = ?", (clean_email,))
+    existing_profile = cur.fetchone()
+    is_first_signup = existing_profile is None
+    prefs_changed = False
+    if existing_profile is not None:
+        old_role = (existing_profile[0] or "").strip().lower()
+        try:
+            old_locs = sorted(str(x).strip().lower() for x in json.loads(existing_profile[1] or "[]"))
+        except Exception:
+            old_locs = []
+        new_locs = sorted(str(x).strip().lower() for x in locations)
+        if old_role != role.strip().lower() or old_locs != new_locs:
+            prefs_changed = True
+
     now_iso = datetime.now().isoformat(timespec="seconds")
     cur.execute(
         """
@@ -206,7 +227,7 @@ def save_user_profile_to_user_db(
             updated_at = excluded.updated_at
         """,
         (
-            email.strip().lower(),
+            clean_email,
             name.strip(),
             role.strip(),
             json.dumps(locations),
@@ -214,6 +235,20 @@ def save_user_profile_to_user_db(
             now_iso,
         ),
     )
+
+    if is_first_signup or prefs_changed or reset_sent_history:
+        cur.execute("DELETE FROM sent_jobs")
+        cur.execute("DELETE FROM daily_runs")
+        try:
+            init_core_db(CORE_DB_PATH)
+            core_conn = get_db_connection(CORE_DB_PATH)
+            core_cur = core_conn.cursor()
+            core_cur.execute("DELETE FROM notifications WHERE recipient_email = ?", (clean_email,))
+            core_conn.commit()
+            core_conn.close()
+        except Exception:
+            pass
+
     conn.commit()
     conn.close()
     return user_db_path
