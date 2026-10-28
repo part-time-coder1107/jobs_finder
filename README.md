@@ -73,7 +73,5 @@ When you finish `python setup_agent.py`, the agent automatically configures:
 ---
 
 ## Key Features
-
-- **100% Free Public ATS Feeds**: Queries Greenhouse, Workday, and Lever directly — no paid API keys, no LLM tokens, and no credit limits.
 - **Last 14 Days Only & Sorted by Recency**: Filters strictly for jobs posted within the last 14 days and sorts them from `Posted Today` down to `14 days ago`.
 - **Zero Duplicate Emails**: Every emailed job is recorded in a dedicated per-user SQLite database (`data/user_dbs/<your_email>.db`) using 3-key deduplication (`job_id`, `canonical_url`, and `company|title`) so the same job is never emailed twice.
