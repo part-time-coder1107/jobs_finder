@@ -2,11 +2,20 @@ import argparse
 import json
 import os
 import socket
+import sys
 import time
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 import yaml
 from dotenv import load_dotenv
+
+try:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
 
 from src.collectors import COLLECTOR_REGISTRY
 from src.normalizer import normalize_raw_jobs
@@ -62,6 +71,40 @@ LOCK_PATH = os.path.join(
     "data",
     "scan.lock",
 )
+DAEMON_HEARTBEAT_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "data",
+    "scheduler_heartbeat.lock",
+)
+
+
+def _is_another_scheduler_alive(max_heartbeat_age: int = 55) -> bool:
+    """
+    Checks if another `--schedule` background daemon is already actively beating
+    its heartbeat lock within `max_heartbeat_age` seconds.
+    """
+    if not os.path.exists(DAEMON_HEARTBEAT_PATH):
+        return False
+    try:
+        with open(DAEMON_HEARTBEAT_PATH, "r", encoding="utf-8") as f:
+            parts = f.read().strip().split(":")
+        if len(parts) == 2:
+            pid = int(parts[0])
+            ts = float(parts[1])
+            if pid != os.getpid() and (time.time() - ts) < max_heartbeat_age:
+                return True
+    except Exception:
+        pass
+    return False
+
+
+def _write_scheduler_heartbeat() -> None:
+    try:
+        os.makedirs(os.path.dirname(DAEMON_HEARTBEAT_PATH), exist_ok=True)
+        with open(DAEMON_HEARTBEAT_PATH, "w", encoding="utf-8") as f:
+            f.write(f"{os.getpid()}:{time.time()}")
+    except Exception:
+        pass
 
 
 def _acquire_scan_lock(max_age_seconds: int = 300) -> bool:
@@ -298,27 +341,35 @@ def run_daily_10am_10pm_scheduler() -> None:
     AND the laptop is connected to the internet, it runs the daily scan once and
     records today's completion in the database only when the email succeeds.
     """
+    if _is_another_scheduler_alive():
+        return
+    _write_scheduler_heartbeat()
+
     cfg = load_preferences_config()
     target_times = (cfg.get("schedule") or {}).get("daily_times") or ["11:00"]
     print(f"[Scheduler] Personal AI Job Agent active. Configured daily time: {target_times[0]}")
 
     while True:
-        cfg = load_preferences_config()
-        target_times = (cfg.get("schedule") or {}).get("daily_times") or ["11:00"]
-        scheduled_hm = target_times[0]
-        recipient_email = ((cfg.get("user") or {}).get("email") or "22mm02002@iitbbs.ac.in").strip()
+        try:
+            _write_scheduler_heartbeat()
+            cfg = load_preferences_config()
+            target_times = (cfg.get("schedule") or {}).get("daily_times") or ["11:00"]
+            scheduled_hm = target_times[0]
+            recipient_email = ((cfg.get("user") or {}).get("email") or "22mm02002@iitbbs.ac.in").strip()
 
-        now = datetime.now()
-        current_hm = now.strftime("%H:%M")
+            now = datetime.now()
+            current_hm = now.strftime("%H:%M")
 
-        if current_hm >= scheduled_hm and not has_run_today(recipient_email, scheduled_hm):
-            if is_internet_connected() and _acquire_scan_lock():
-                try:
-                    print(f"\n[{now.isoformat(timespec='seconds')}] Running daily scheduled scan (target: {scheduled_hm})...")
-                    summary = run_job_search_pipeline(send_email=True)
-                    print(format_plain_text_digest(summary))
-                finally:
-                    _release_scan_lock()
+            if current_hm >= scheduled_hm and not has_run_today(recipient_email, scheduled_hm):
+                if is_internet_connected() and _acquire_scan_lock():
+                    try:
+                        print(f"\n[{now.isoformat(timespec='seconds')}] Running daily scheduled scan (target: {scheduled_hm})...")
+                        summary = run_job_search_pipeline(send_email=True)
+                        print(format_plain_text_digest(summary))
+                    finally:
+                        _release_scan_lock()
+        except Exception:
+            pass
 
         time.sleep(20)
 

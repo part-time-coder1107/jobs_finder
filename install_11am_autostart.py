@@ -89,23 +89,45 @@ WshShell.Run """{PYTHON_EXE}"" -m src.main --schedule", 0, False
     with open(vbs_path, "w", encoding="utf-8") as f:
         f.write(vbs_content)
 
-    # Also ensure the background watcher is running immediately in the current session
+    data_dir = os.path.join(WORKSPACE_DIR, "data")
+    os.makedirs(data_dir, exist_ok=True)
+    catchup_vbs_path = os.path.join(data_dir, "JobAgent_11AM_CatchUp.vbs")
+    catchup_vbs_content = f'''Set WshShell = CreateObject("WScript.Shell")
+WshShell.CurrentDirectory = "{WORKSPACE_DIR}"
+WshShell.Run """{PYTHON_EXE}"" -m src.main --catch-up", 0, False
+WshShell.Run """{PYTHON_EXE}"" -m src.main --schedule", 0, False
+'''
+    with open(catchup_vbs_path, "w", encoding="utf-8") as f:
+        f.write(catchup_vbs_content)
+
+    # Register in Windows CurrentUser Registry Run key for boot/login persistence
     try:
         subprocess.run(
             [
-                "powershell",
-                "-NoProfile",
-                "-Command",
-                'Get-CimInstance Win32_Process -Filter "Name=\'python.exe\' AND CommandLine LIKE \'%src.main --schedule%\'" | Invoke-CimMethod -MethodName Terminate -ErrorAction SilentlyContinue',
+                "reg",
+                "add",
+                r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run",
+                "/v",
+                "JobAgent_11AM_Watcher",
+                "/t",
+                "REG_SZ",
+                "/d",
+                f'wscript.exe //B "{vbs_path}"',
+                "/f",
             ],
             capture_output=True,
             text=True,
         )
+    except Exception:
+        pass
+
+    # Also ensure the background watcher is running immediately in the current session
+    try:
         subprocess.Popen(["wscript.exe", "//B", vbs_path], close_fds=True)
     except Exception:
         pass
 
-    cmd_str = f'cmd /c cd /d "{WORKSPACE_DIR}" && "{PYTHON_EXE}" -m src.main --catch-up'
+    cmd_str = f'wscript.exe //B "{catchup_vbs_path}"'
     for task_name in ("JobAgent_12PM_Noon", "JobAgent_Daily"):
         subprocess.run(
             [
@@ -129,7 +151,7 @@ WshShell.Run """{PYTHON_EXE}"" -m src.main --schedule", 0, False
                 "powershell",
                 "-NoProfile",
                 "-Command",
-                f'Set-ScheduledTask -TaskName "{task_name}" -Settings (New-ScheduledTaskSettingsSet -StartWhenAvailable -WakeToRun -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries)',
+                f'Set-ScheduledTask -TaskName "{task_name}" -Settings (New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Hours 0)) -ErrorAction SilentlyContinue',
             ],
             capture_output=True,
             text=True,
