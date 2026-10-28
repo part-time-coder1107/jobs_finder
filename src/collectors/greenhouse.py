@@ -63,8 +63,8 @@ class GreenhouseCollector(BaseCollector):
                     plain_desc = ""
                     if raw_html:
                         try:
-                            unescaped = html.unescape(raw_html[:6000])
-                            plain_desc = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", unescaped)).strip()[:1500]
+                            unescaped = html.unescape(raw_html)
+                            plain_desc = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", unescaped)).strip()[:12000]
                         except Exception:
                             plain_desc = raw_html[:1000]
 

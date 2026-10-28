@@ -1,9 +1,11 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import html
 import re
 from typing import List, Dict, Any
 import requests
 from src.collectors.base import BaseCollector
 from src.models import RawJob
+from src.normalizer import standardize_posted_date
 
 
 class WorkdayCollector(BaseCollector):
@@ -125,5 +127,34 @@ class WorkdayCollector(BaseCollector):
                     collected.extend(fut.result())
                 except Exception:
                     continue
+
+        # Fetch full job details (including Qualifications Required section) from Workday's
+        # individual job endpoint for recent candidate postings (within 14 days)
+        def _enrich_workday_job_detail(job: RawJob) -> None:
+            std_date = standardize_posted_date(job.posted_at)
+            if std_date == "Unknown" or "30+" in (job.posted_at or ""):
+                return
+            try:
+                # Convert public URL https://{tenant}.{wd}.myworkdayjobs.com/en-US/{site_id}/job/...
+                # into CXS detail API https://{tenant}.{wd}.myworkdayjobs.com/wday/cxs/{tenant}/{site_id}/job/...
+                m = re.match(r"^(https://([^.]+)\.[^/]+\.myworkdayjobs\.com)/en-US/([^/]+)(/job/.+)$", job.job_url)
+                if not m:
+                    return
+                base_host, tenant, site_id, ext_path = m.group(1), m.group(2), m.group(3), m.group(4)
+                detail_api_url = f"{base_host}/wday/cxs/{tenant}/{site_id}{ext_path}"
+                r = requests.get(detail_api_url, headers=headers, timeout=6)
+                if r.status_code == 200:
+                    info = r.json().get("jobPostingInfo") or {}
+                    raw_desc = info.get("jobDescription") or ""
+                    if raw_desc:
+                        unescaped = html.unescape(raw_desc)
+                        plain_detail = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", unescaped)).strip()[:12000]
+                        if plain_detail:
+                            job.description = f"{job.description} {plain_detail}".strip()
+            except Exception:
+                pass
+
+        with ThreadPoolExecutor(max_workers=20) as detail_pool:
+            list(detail_pool.map(_enrich_workday_job_detail, collected))
 
         return collected

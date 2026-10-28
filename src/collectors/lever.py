@@ -1,5 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
+import html
+import re
 from typing import List, Dict, Any
 import requests
 from src.collectors.base import BaseCollector
@@ -60,15 +62,17 @@ class LeverCollector(BaseCollector):
                     team = categories.get("team") or ""
                     commitment = categories.get("commitment") or ""
                     hosted_url = (p.get("hostedUrl") or "").strip()
-                    desc_plain = (p.get("descriptionPlain") or "")[:1500]
-                    lists_plain = " ".join(
+                    desc_plain = (p.get("descriptionPlain") or "").strip()
+                    additional_plain = (p.get("additionalPlain") or "").strip()
+                    raw_lists = " ".join(
                         [
-                            (lst.get("text", "") + " " + (lst.get("content") or ""))
+                            f"{lst.get('text', '')}: {lst.get('content') or ''}"
                             for lst in (p.get("lists") or [])
                             if isinstance(lst, dict)
                         ]
-                    )[:1000]
-                    full_desc = f"Team: {team}. Type: {commitment}. {desc_plain} {lists_plain}".strip()
+                    )
+                    clean_lists = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", html.unescape(raw_lists))).strip()
+                    full_desc = f"Team: {team}. Type: {commitment}. {desc_plain} {clean_lists} {additional_plain}".strip()[:12000]
 
                     created_ms = p.get("createdAt")
                     posted_str = "Unknown"
